@@ -1,0 +1,45 @@
+# Qt Creator
+build/
+CMakeLists.txt.user
+.qmake.stash
+*.pro.user
+*.pro.user.*
+
+# Qt files
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+
+# Build directories
+debug/
+release/
+.obj/
+.moc/
+.rcc/
+.ui/
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Visual Studio
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+
+# Executable and libraries
+*.exe
+*.dll
+*.so
+*.a
+*.lib
+
+# Logs
+*.log
+logs/
