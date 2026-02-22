@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RCC>
+    <qresource prefix="/">
+        <!-- 这里可以添加应用程序的资源，如图标、图片等 -->
+        <!-- <file>images/app.ico</file> -->
+    </qresource>
+</RCC>
