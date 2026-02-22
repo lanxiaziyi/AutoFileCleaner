@@ -29,6 +29,7 @@ private slots:
 private:
     void initUI();
     void loadTask(const FileCleanTask& task);
+    bool isRootDirectory(const QString& path);
     
     QLineEdit* m_nameEdit;
     QPlainTextEdit* m_descriptionEdit;

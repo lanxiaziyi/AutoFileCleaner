@@ -5,6 +5,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QDebug>
+#include <QDir>
 
 AddTaskDialog::AddTaskDialog(QWidget* parent)
     : QDialog(parent) {
@@ -119,6 +120,15 @@ FileCleanTask AddTaskDialog::getTask() const {
 void AddTaskDialog::onAddFolder() {
     QString folder = QFileDialog::getExistingDirectory(this, "选择文件夹");
     if (!folder.isEmpty()) {
+        // 检查是否为根目录
+        if (isRootDirectory(folder)) {
+            QMessageBox::warning(this, "路径不合法", 
+                "不允许添加根目录！\n\n"
+                "出于安全考虑，请选择具体的子目录来清理。\n"
+                "例如：C:\\Users\\YourName\\Downloads （而不是 C:\\）");
+            return;
+        }
+        
         // 检查是否已存在
         bool exists = false;
         for (int i = 0; i < m_folderList->count(); ++i) {
@@ -134,6 +144,28 @@ void AddTaskDialog::onAddFolder() {
             m_folderList->addItem(folder);
         }
     }
+}
+
+bool AddTaskDialog::isRootDirectory(const QString& path) {
+    QDir dir(path);
+    
+    // 在 Windows 上检查 C:\, D:\ 等根目录
+    // 在 Unix/Linux 上检查 / 根目录
+#ifdef Q_OS_WIN
+    // 获取驱动器的根目录
+    QFileInfo fileInfo(path);
+    QString absolutePath = fileInfo.absolutePath();
+    QString fileName = fileInfo.fileName();
+    
+    // 如果路径的根目录就是它自己，说明是根目录
+    // (例如 C:\ 的根是 C:\ 本身)
+    return (dir.isRoot() || 
+            fileName.isEmpty() || 
+            (absolutePath == path && path.length() <= 3)); // C:\ 形式
+#else
+    // Unix/Linux 系统
+    return path == "/" || dir.isRoot();
+#endif
 }
 
 void AddTaskDialog::onRemoveFolder() {
