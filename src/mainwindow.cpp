@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "addtaskdialog.h"
+#include "autostartutiility_win.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QTableView>
@@ -10,6 +11,7 @@
 #include <QAction>
 #include <QSystemTrayIcon>
 #include <QClipboard>
+#include <QCheckBox>
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -85,11 +87,15 @@ void MainWindow::initUI() {
     // 状态栏
     m_statusLabel = new QLabel("调度器: 已启动");
     m_enabledCountLabel = new QLabel("已启用任务: 0");
+    m_autoStartCheckBox = new QCheckBox("开机自启动");
+    m_autoStartCheckBox->setChecked(m_configManager.isAutoStartEnabled());
     
     QHBoxLayout* statusLayout = new QHBoxLayout();
     statusLayout->addWidget(m_statusLabel);
     statusLayout->addSpacing(20);
     statusLayout->addWidget(m_enabledCountLabel);
+    statusLayout->addSpacing(30);
+    statusLayout->addWidget(m_autoStartCheckBox);
     statusLayout->addStretch();
     
     mainLayout->addLayout(statusLayout);
@@ -103,6 +109,7 @@ void MainWindow::initConnections() {
     connect(m_deleteBtn, &QPushButton::clicked, this, &MainWindow::onDeleteTask);
     connect(m_runBtn, &QPushButton::clicked, this, &MainWindow::onRunTask);
     connect(m_runAllBtn, &QPushButton::clicked, this, &MainWindow::onRunAllTasks);
+    connect(m_autoStartCheckBox, &QCheckBox::toggled, this, &MainWindow::onAutoStartToggled);
 }
 
 void MainWindow::onAddTask() {
@@ -317,6 +324,39 @@ void MainWindow::saveTasks() {
 void MainWindow::onSettings() {
     // 待实现
     QMessageBox::information(this, "设置", "设置功能待完善");
+}
+
+void MainWindow::onAutoStartToggled(bool checked) {
+    QString appPath = QApplication::applicationFilePath();
+    QString appName = "AutoFileCleaner";
+    
+    if (checked) {
+        // 启用开机自启
+        if (AutoStartUtility::setAutoStart(appName, appPath, true)) {
+            m_configManager.setAutoStartEnabled(true);
+            QMessageBox::information(this, "成功", "开机自启动已启用");
+            qDebug() << "Auto-start enabled";
+        } else {
+            m_autoStartCheckBox->blockSignals(true);
+            m_autoStartCheckBox->setChecked(false);
+            m_autoStartCheckBox->blockSignals(false);
+            QMessageBox::warning(this, "失败", "无法启用开机自启动，可能需要管理员权限");
+            qWarning() << "Failed to enable auto-start";
+        }
+    } else {
+        // 禁用开机自启
+        if (AutoStartUtility::disableAutoStart(appName)) {
+            m_configManager.setAutoStartEnabled(false);
+            QMessageBox::information(this, "成功", "开机自启动已禁用");
+            qDebug() << "Auto-start disabled";
+        } else {
+            m_autoStartCheckBox->blockSignals(true);
+            m_autoStartCheckBox->setChecked(true);
+            m_autoStartCheckBox->blockSignals(false);
+            QMessageBox::warning(this, "失败", "无法禁用开机自启动");
+            qWarning() << "Failed to disable auto-start";
+        }
+    }
 }
 
 void MainWindow::onAbout() {

@@ -6,6 +6,7 @@
 #include <QTableView>
 #include <QLabel>
 #include <QSystemTrayIcon>
+#include <QCheckBox>
 #include "taskmanager.h"
 #include "taskmodel.h"
 #include "configmanager.h"
@@ -39,6 +40,7 @@ private slots:
     // 设置
     void onSettings();
     void onAbout();
+    void onAutoStartToggled(bool checked);
     
     // 系统托盘
     void onTrayIconActivated(QSystemTrayIcon::ActivationReason reason);
@@ -65,6 +67,7 @@ private:
     QPushButton* m_runAllBtn;
     QLabel* m_statusLabel;
     QLabel* m_enabledCountLabel;
+    QCheckBox* m_autoStartCheckBox;
     
     // 业务逻辑
     TaskManager m_taskManager;
