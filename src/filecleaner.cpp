@@ -74,27 +74,62 @@ QVector<QString> FileCleaner::scanFolder(const QString& folderPath, int daysThre
     return filesToDelete;
 }
 
+// helper to convert FILETIME to QDateTime (UTC)
+static QDateTime filetimeToQDateTime(const FILETIME& ft) {
+    ULARGE_INTEGER uli;
+    uli.LowPart = ft.dwLowDateTime;
+    uli.HighPart = ft.dwHighDateTime;
+
+    // Windows FILETIME is 100-ns intervals since 1601.
+    const qint64 EPOCH_DIFFERENCE = 116444736000000000LL;
+    qint64 msecs = (uli.QuadPart - EPOCH_DIFFERENCE) / 10000;
+    return QDateTime::fromMSecsSinceEpoch(msecs, Qt::UTC);
+}
+
 QDateTime FileCleaner::getFileLastAccessTime(const QString& filePath) {
 #ifdef Q_OS_WIN
-    // Windows 特定实现
+    // Windows-specific: use GetFileAttributesEx, which gives three timestamps
     WIN32_FILE_ATTRIBUTE_DATA fileAttrData;
     if (GetFileAttributesExW((LPCWSTR)filePath.utf16(), GetFileExInfoStandard, &fileAttrData)) {
-        FILETIME ftLastAccessTime = fileAttrData.ftLastAccessTime;
-        ULARGE_INTEGER uli;
-        uli.LowPart = ftLastAccessTime.dwLowDateTime;
-        uli.HighPart = ftLastAccessTime.dwHighDateTime;
-        
-        // Windows 时间戳是从 1601 年开始，需要转换
-        const qint64 EPOCH_DIFFERENCE = 116444736000000000LL;  // 100-nanosecond intervals
-        qint64 msecs = (uli.QuadPart - EPOCH_DIFFERENCE) / 10000;
-        
-        return QDateTime::fromMSecsSinceEpoch(msecs, Qt::UTC);
+        return filetimeToQDateTime(fileAttrData.ftLastAccessTime);
     }
-#else
+    // fall through to fallback below
+#endif
     QFileInfo fileInfo(filePath);
+#ifdef Q_OS_WIN
+    // if the Windows API failed, QFileInfo still works
+    return fileInfo.lastRead();
+#else
     return fileInfo.lastRead();
 #endif
-    return QDateTime();
+}
+
+QDateTime FileCleaner::getFileCreationTime(const QString& filePath) {
+#ifdef Q_OS_WIN
+    WIN32_FILE_ATTRIBUTE_DATA fileAttrData;
+    if (GetFileAttributesExW((LPCWSTR)filePath.utf16(), GetFileExInfoStandard, &fileAttrData)) {
+        return filetimeToQDateTime(fileAttrData.ftCreationTime);
+    }
+    QFileInfo fileInfo(filePath);
+    return fileInfo.birthTime();
+#else
+    QFileInfo fileInfo(filePath);
+    return fileInfo.birthTime();
+#endif
+}
+
+QDateTime FileCleaner::getFileLastModifiedTime(const QString& filePath) {
+#ifdef Q_OS_WIN
+    WIN32_FILE_ATTRIBUTE_DATA fileAttrData;
+    if (GetFileAttributesExW((LPCWSTR)filePath.utf16(), GetFileExInfoStandard, &fileAttrData)) {
+        return filetimeToQDateTime(fileAttrData.ftLastWriteTime);
+    }
+    QFileInfo fileInfo(filePath);
+    return fileInfo.lastModified();
+#else
+    QFileInfo fileInfo(filePath);
+    return fileInfo.lastModified();
+#endif
 }
 
 bool FileCleaner::shouldDeleteFile(const QString& filePath, int daysThreshold) {
@@ -102,18 +137,26 @@ bool FileCleaner::shouldDeleteFile(const QString& filePath, int daysThreshold) {
     
     // 获取最后访问时间
     QDateTime lastAccessTime = getFileLastAccessTime(filePath);
-    
-    if (!lastAccessTime.isValid()) {
+    QDateTime lastModifyTime = getFileLastModifiedTime(filePath);
+    QDateTime createTime = getFileCreationTime(filePath);
+    qDebug()<<"robin:fileInfo:"<<fileInfo.fileName()<<" createTime:"<<createTime.toLocalTime().toString("yyyy-MM-dd HH:mm:ss") 
+                                                    <<" lastModifyTime:"<<lastModifyTime.toLocalTime().toString("yyyy-MM-dd HH:mm:ss")
+                                                    <<" lastAccessTime:"<<lastAccessTime.toLocalTime().toString("yyyy-MM-dd HH:mm:ss");
+
+
+    QDateTime usedTime = lastModifyTime;
+
+    if (!usedTime.isValid()) {
         // 如果无法获取访问时间，使用修改时间
-        lastAccessTime = fileInfo.lastModified();
+        usedTime = fileInfo.lastModified();
     }
     
-    if (!lastAccessTime.isValid()) {
+    if (!usedTime.isValid()) {
         return false;
     }
     
     // 计算距离现在的天数
-    int daysSinceLastAccess = lastAccessTime.daysTo(QDateTime::currentDateTime());
+    int daysSinceLastAccess = usedTime.daysTo(QDateTime::currentDateTime());
     
     return daysSinceLastAccess >= daysThreshold;
 }

@@ -30,6 +30,12 @@ private:
     // 获取文件的最后访问时间
     QDateTime getFileLastAccessTime(const QString& filePath);
     
+    // 获取文件的创建时间（birth time）
+    QDateTime getFileCreationTime(const QString& filePath);
+    
+    // 获取文件的最后修改时间
+    QDateTime getFileLastModifiedTime(const QString& filePath);
+    
     // 检查文件是否应该被删除
     bool shouldDeleteFile(const QString& filePath, int daysThreshold);
     
