@@ -144,7 +144,7 @@ bool FileCleaner::shouldDeleteFile(const QString& filePath, int daysThreshold) {
                                                     <<" lastAccessTime:"<<lastAccessTime.toLocalTime().toString("yyyy-MM-dd HH:mm:ss");
 
 
-    QDateTime usedTime = lastModifyTime;
+    QDateTime usedTime = lastAccessTime;
 
     if (!usedTime.isValid()) {
         // 如果无法获取访问时间，使用修改时间
