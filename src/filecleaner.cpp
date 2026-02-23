@@ -74,7 +74,8 @@ QVector<QString> FileCleaner::scanFolder(const QString& folderPath, int daysThre
     return filesToDelete;
 }
 
-// helper to convert FILETIME to QDateTime (UTC)
+// helper to convert FILETIME to QDateTime (UTC) - only for Windows
+#ifdef Q_OS_WIN
 static QDateTime filetimeToQDateTime(const FILETIME& ft) {
     ULARGE_INTEGER uli;
     uli.LowPart = ft.dwLowDateTime;
@@ -85,6 +86,7 @@ static QDateTime filetimeToQDateTime(const FILETIME& ft) {
     qint64 msecs = (uli.QuadPart - EPOCH_DIFFERENCE) / 10000;
     return QDateTime::fromMSecsSinceEpoch(msecs, Qt::UTC);
 }
+#endif
 
 QDateTime FileCleaner::getFileLastAccessTime(const QString& filePath) {
 #ifdef Q_OS_WIN
