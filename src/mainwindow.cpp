@@ -38,6 +38,9 @@ MainWindow::MainWindow(QWidget *parent)
     
     // 启动调度器
     startScheduler();
+
+    //设置图标
+    this->setWindowIcon(QIcon(":/BlankApp.png"));
 }
 
 MainWindow::~MainWindow() {
@@ -250,9 +253,10 @@ void MainWindow::createTrayIcon() {
     
     QIcon icon;
     // 可以设置应用图标
-    // icon = QIcon(":/images/app.ico");
+    icon = QIcon(":/BlankApp.png");
     
     m_trayMenu = new QMenu(this);
+    m_trayIcon->setIcon(icon);
     
     QAction* showAction = m_trayMenu->addAction("显示");
     connect(showAction, &QAction::triggered, this, &QWidget::showNormal);
