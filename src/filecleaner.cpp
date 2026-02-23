@@ -1,4 +1,7 @@
 #include "filecleaner.h"
+#ifdef Q_OS_WIN
+#include <windows.h> // for WIN32_FILE_ATTRIBUTE_DATA and GetFileAttributesEx
+#endif
 #include <QDir>
 #include <QFileInfo>
 #include <QDateTime>

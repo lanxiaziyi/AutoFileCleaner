@@ -34,6 +34,8 @@ RESOURCES += \
 # Windows 特定设置
 win32 {
     RC_FILE = resources/app.rc
+    # registry APIs (RegOpenKeyEx, RegCloseKey, etc.) are in Advapi32
+    LIBS += -ladvapi32
 }
 
 # 生成路径
